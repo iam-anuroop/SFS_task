@@ -16,7 +16,7 @@ class SignupView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             token = generate_token(user)
-            verify_url = request.build_absolute_url(f'/users/verify-email/{token}')
+            verify_url = request.build_absolute_uri(f'/usersapp/verify-email/{token}')
             send_mail(
                 'Verify your email',
                 f'Please Verify your email by clicking the link {verify_url}',
@@ -30,6 +30,7 @@ class VerifyEmail(APIView):
     def post(self,request,token):
         try:
             user = verify_token(request.user, token)
+            print(user)
             user.is_verified = True
             user.save()
             return Response({'msg':'Verification success'}, status=status.HTTP_200_OK)

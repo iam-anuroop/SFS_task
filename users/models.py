@@ -3,12 +3,13 @@ from django.contrib.auth.models import UserManager
 from django.db import models
 
 class User(AbstractBaseUser):
+    username = models.CharField(max_length=100)
     email = models.EmailField(unique=True, verbose_name='email address')
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    verified = models.BooleanField(default=False)
-    user_type = models.CharField(
-        max_length=10, choices=(('ops', 'Operations'), ('client', 'Client')), default='client'
+    is_verified = models.BooleanField(default=False)
+    role = models.CharField(
+        max_length=10, choices=(('ops', 'Ops'), ('client', 'Client')), default='client'
     )
 
     USERNAME_FIELD = 'email'

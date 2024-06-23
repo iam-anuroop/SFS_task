@@ -51,7 +51,7 @@ class DownloadFileView(APIView):
             return Response({'msg':'file not available'},status=status.HTTP_400_BAD_REQUEST)
         if file:
             token = generate_token(request.user)
-            download_url = request.build_absolute_uri(f'/api/download-file/{token}/{file.id}')
+            download_url = request.build_absolute_uri(f'/filesapp/download-file/{token}/{file.id}')
             return Response({'download_link': download_url}, status=status.HTTP_200_OK)
         return Response({'message': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
 
