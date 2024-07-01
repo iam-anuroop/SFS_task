@@ -6,8 +6,8 @@ from .models import User
 from .serializers import Userserializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import generate_token, verify_token
-from django.core.mail import send_mail
-from django.conf import settings
+from django.core.mail import EmailMessage
+from django.contrib.auth.hashers import check_password
 
 
 class SignupView(APIView):
@@ -16,21 +16,20 @@ class SignupView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             token = generate_token(user)
-            verify_url = request.build_absolute_uri(f'/usersapp/verify-email/{token}')
-            send_mail(
-                'Verify your email',
-                f'Please Verify your email by clicking the link {verify_url}',
-                settings.EMAIL_HOST_USER
-                [user.email],
-            )
+            verify_url = request.build_absolute_uri(f'/usersapp/verify-email/{token}/')
+            mail_subject = "Verify"
+            message = f'click this url to verify your email, {verify_url}'
+            to_email = user.email
+            send_mail = EmailMessage(mail_subject, message, to=[to_email])
+            send_mail.send()
+
             return Response({'please verify email'},status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
 class VerifyEmail(APIView):
-    def post(self,request,token):
+    def get(self,request,token):
         try:
-            user = verify_token(request.user, token)
-            print(user)
+            user = verify_token(token)
             user.is_verified = True
             user.save()
             return Response({'msg':'Verification success'}, status=status.HTTP_200_OK)
@@ -45,10 +44,10 @@ class LoginView(APIView):
             user = User.objects.get(email=email)
         except:
             return Response({'msg':'Invalid email'},status=status.HTTP_400_BAD_REQUEST)
-        if user and user.check_password(password):
+        if user is not None and check_password(password,user.password):
             if user.is_verified:
                 refresh = RefreshToken.for_user(user)
-                return ResourceWarning({
+                return Response({
                     'refresh':str(refresh),
                     'access':str(refresh.access_token),
                     },status=status.HTTP_200_OK

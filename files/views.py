@@ -10,10 +10,10 @@ from rest_framework.permissions import IsAuthenticated
 
 
 class FileuploadView(APIView):
-    parser_classes = [IsAuthenticated,IsopsUser]
+    permission_classes = [IsAuthenticated,IsopsUser]
 
     def post(self,request):
-        if request.user.roll != 'ops':
+        if request.user.role != 'ops':
             return Response({'message': 'Only Ops users can upload files'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         
         file = request.FILES.get('file')
@@ -33,6 +33,7 @@ class FileuploadView(APIView):
             return Response({'message': 'File uploaded successfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
+
 class ListFilesView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -40,6 +41,7 @@ class ListFilesView(APIView):
         files = File.objects.all()
         serializer = FileSerializer(files, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class DownloadFileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -51,21 +53,49 @@ class DownloadFileView(APIView):
             return Response({'msg':'file not available'},status=status.HTTP_400_BAD_REQUEST)
         if file:
             token = generate_token(request.user)
-            download_url = request.build_absolute_uri(f'/filesapp/download-file/{token}/{file.id}')
-            return Response({'download_link': download_url}, status=status.HTTP_200_OK)
+            if request.user.role == 'client':
+                download_url = request.build_absolute_uri(f'/filesapp/download-file/{token}/{file.id}/')
+                return Response({'download_link': download_url}, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
         return Response({'message': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class DownloadWithTokenView(APIView):
 
+    # def get(self, request, token, file_id):
+    #     try:
+    #         user = verify_token(token)
+    #         if user.role == 'client':
+    #             file = File.objects.get(id=file_id)
+    #             response = Response(file.data, content_type='application/octet-stream')
+    #             print(response)
+    #             response['Content-Disposition'] = f'attachment; filename={file.filename}'
+    #             return response
+    #         return Response({'message': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+    #     except :
+    #         return Response({'message': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+
+
     def get(self, request, token, file_id):
         try:
-            user_id = verify_token(token)
-            user = User.objects.get(id=user_id)
+            user = verify_token(token)
             if user.role == 'client':
+                # Retrieve the file or return 404 if not found
                 file = File.objects.get(id=file_id)
-                response = Response(file.data, content_type='application/octet-stream')
-                response['Content-Disposition'] = f'attachment; filename={file.filename}'
-                return response
-            return Response({'message': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
-        except :
-            return Response({'message': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Ensure file.data contains the actual file content
+                if file.file:
+                    response = Response(file.file, content_type='application/octet-stream')
+                    response['Content-Disposition'] = f'attachment; filename={file.filename}'
+                    return response
+                else:
+                    return Response({'message': 'File content not available'}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response({'message': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
+        except File.DoesNotExist:
+            return Response({'message': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
