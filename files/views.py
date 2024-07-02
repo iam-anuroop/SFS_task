@@ -63,39 +63,19 @@ class DownloadFileView(APIView):
 
 class DownloadWithTokenView(APIView):
 
-    # def get(self, request, token, file_id):
-    #     try:
-    #         user = verify_token(token)
-    #         if user.role == 'client':
-    #             file = File.objects.get(id=file_id)
-    #             response = Response(file.data, content_type='application/octet-stream')
-    #             print(response)
-    #             response['Content-Disposition'] = f'attachment; filename={file.filename}'
-    #             return response
-    #         return Response({'message': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
-    #     except :
-    #         return Response({'message': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
-
-
     def get(self, request, token, file_id):
         try:
             user = verify_token(token)
             if user.role == 'client':
-                # Retrieve the file or return 404 if not found
                 file = File.objects.get(id=file_id)
 
-                # Ensure file.data contains the actual file content
                 if file.file:
                     response = Response(file.file, content_type='application/octet-stream')
                     response['Content-Disposition'] = f'attachment; filename={file.filename}'
                     return response
                 else:
-                    return Response({'message': 'File content not available'}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({'message': 'File not available'}, status=status.HTTP_404_NOT_FOUND)
             else:
                 return Response({'message': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
-
-        except File.DoesNotExist:
+        except:
             return Response({'message': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        except Exception as e:
-            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)

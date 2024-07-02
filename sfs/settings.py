@@ -147,12 +147,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
-    # 'DEFAULT_TOKEN_CLASSES': ("rest_framework_simplejwt.tokens.AccessToken",)
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),  # Example: token expires in 15 minutes
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=100),     # Example: refresh token expires in 1 day
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),  
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=100),    
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'ALGORITHM': 'HS256',
